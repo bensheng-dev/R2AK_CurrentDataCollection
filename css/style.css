@@ -51,6 +51,19 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   scrollbar-color: var(--border) transparent;
 }
 
+#timeseries-panel.collapsed {
+  height: 44px;  /* just the header row */
+}
+
+#timeseries-panel.collapsed .timeseries-body {
+  display: none;
+}
+
+:root {
+  --ts-h: 220px;
+}
+
+/* 2. panel has fixed height when expanded */
 #timeseries-panel {
   grid-column: 2;
   grid-row: 2;
@@ -60,18 +73,14 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   flex-direction: column;
   z-index: 10;
   overflow: hidden;
-  /* height is controlled by JS, no fixed --ts-h needed */
+  height: var(--ts-h);
 }
 
-#timeseries-panel.collapsed .timeseries-body {
-  display: none;
-}
-
+/* 3. body fills whatever the panel leaves after the header */
 .timeseries-body {
   flex: 1;
   padding: 8px 16px 10px;
   min-height: 0;
-  height: 180px;  /* only applies when expanded */
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
