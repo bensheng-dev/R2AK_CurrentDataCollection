@@ -253,10 +253,8 @@ function drawCompass(twd) {
 async function fetchData() {
   setStatus('loading');
   try {
-    const url = `https://api.notefile.net/v1/projects/${CONFIG.NOTEHUB_PROJECT_UID}/events?pageSize=${CONFIG.PAGE_SIZE}`;
-    const res = await fetch(url, {
-      headers: { 'X-Session-Token': CONFIG.NOTEHUB_TOKEN },
-    });
+    const url = `/.netlify/functions/notehub?pageSize=${CONFIG.PAGE_SIZE}`;
+    const res = await fetch(url);
 
     if (!res.ok) throw new Error(`Notehub ${res.status}`);
 
