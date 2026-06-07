@@ -1,60 +1,23 @@
+// ============================================================
+//  config.js  –  fill in your Notehub details here
+// ============================================================
+
 const CONFIG = {
-  dataUrls: {
-    history: "data/history.geojson",
-    latest: "data/latest.json"
-  },
+  // Your Blues Notehub project UID (same as productUID in your Arduino sketch)
+  NOTEHUB_PROJECT_UID: "com.gmail.ben.ak.sheng:r2ak_data",
 
-  refreshMs: 60_000,
+  // Notehub API token – generate one at notehub.io → Account → API Tokens
+  // IMPORTANT: for a public site, route your data through a Netlify serverless
+  // function instead of exposing this token here.
+  NOTEHUB_TOKEN: "YOUR_NOTEHUB_API_TOKEN_HERE",
 
-  staleAfterMinutes: 30,
+  // How many notes to fetch per refresh (max 250)
+  PAGE_SIZE: 250,
 
-  startView: {
-    center: [49.2827, -123.1207],
-    zoom: 7
-  },
+  // How often to poll for new data (ms). 5 min = 300000
+  POLL_INTERVAL: 300000,
 
-  pollutants: {
-    CO: {
-      label: "CO",
-      unit: "ppm",
-      range: [0, 1]
-    },
-    NO: {
-      label: "NO",
-      unit: "ppb",
-      range: [0, 100]
-    },
-    NO2: {
-      label: "NO₂",
-      unit: "ppb",
-      range: [0, 100]
-    },
-    O3: {
-      label: "O₃",
-      unit: "ppb",
-      range: [0, 100]
-    },
-    CO2: {
-      label: "CO₂",
-      unit: "ppm",
-      range: [400, 1000]
-    },
-    PM2_5: {
-      label: "PM₂.₅",
-      unit: "µg/m³",
-      range: [0, 100]
-    },
-    PM10: {
-      label: "PM₁₀",
-      unit: "µg/m³",
-      range: [0, 200]
-    },
-    AQHI: {
-      label: "AQHI",
-      unit: "",
-      range: [1, 10]
-    }
-  },
-
-  defaultPollutant: "PM2_5"
+  // Map starting view [lat, lon, zoom]
+  MAP_CENTER: [50.5, -127.0],
+  MAP_ZOOM: 6,
 };

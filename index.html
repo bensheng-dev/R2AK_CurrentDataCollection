@@ -3,75 +3,131 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Elusive R2AK Current Data Tracker</title>
-
-  <link
-    rel="stylesheet"
-    href="style.css"
-  />
-
-  <link rel="stylesheet" href="css/style.css" />
+  <title>R2AK Sailing Data Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
   <main id="app">
     <div id="map"></div>
 
     <aside id="info-panel">
       <header>
-        <p class="eyebrow">Race2AK</p>
-        <h1>Elusive R2AK Current Data Tracker</h1>
-        <p class="subtitle">
-          Air-quality observations from a moving vessel during Race to Alaska.
-        </p>
-        <p id="status-pill" class="status-pill">Loading...</p>
+        <p class="eyebrow">Race to Alaska</p>
+        <h1>R2AK Live Tracker</h1>
+        <p class="subtitle">Wind · Current · Position · Heading</p>
+        <div id="status-pill" class="status-pill">Loading…</div>
       </header>
-<!--
-      <section class="card">
-        <h2>Current Location</h2>
-        <p id="current-location">—</p>
-      </section>
--->
+
       <section class="card">
         <h2>Last Updated</h2>
-        <p id="last-updated">—</p>
+        <p id="last-updated" class="mono">—</p>
       </section>
 
-      <details class="card" open>
-        <summary>Current Pollutants</summary>
-        <div id="pollutant-list" class="pollutant-list"></div>
-      </details>
-
-      <section class="card">
-        <label for="pollutant-select">Plume pollutant</label>
-        <select id="pollutant-select"></select>
+      <section class="card" id="position-card">
+        <h2>Position</h2>
+        <div class="data-grid">
+          <div class="data-item">
+            <span class="label">Lat</span>
+            <span class="value mono" id="val-lat">—</span>
+          </div>
+          <div class="data-item">
+            <span class="label">Lon</span>
+            <span class="value mono" id="val-lon">—</span>
+          </div>
+          <div class="data-item">
+            <span class="label">SOG</span>
+            <span class="value mono" id="val-sog">—</span>
+            <span class="unit">kts</span>
+          </div>
+          <div class="data-item">
+            <span class="label">COG</span>
+            <span class="value mono" id="val-cog">—</span>
+            <span class="unit">°</span>
+          </div>
+        </div>
       </section>
 
       <section class="card">
-        <h2>Legend</h2>
-        <div id="legend"></div>
+        <h2>Wind</h2>
+        <div class="data-grid">
+          <div class="data-item">
+            <span class="label">AWS</span>
+            <span class="value mono" id="val-aws">—</span>
+            <span class="unit">kts</span>
+          </div>
+          <div class="data-item">
+            <span class="label">AWA</span>
+            <span class="value mono" id="val-awa">—</span>
+            <span class="unit">°</span>
+          </div>
+          <div class="data-item">
+            <span class="label">TWS</span>
+            <span class="value mono" id="val-tws">—</span>
+            <span class="unit">kts</span>
+          </div>
+          <div class="data-item">
+            <span class="label">TWD</span>
+            <span class="value mono" id="val-twd">—</span>
+            <span class="unit">°</span>
+          </div>
+        </div>
+        <div class="compass-wrap">
+          <canvas id="wind-compass" width="120" height="120"></canvas>
+          <p class="compass-label">True Wind</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Water</h2>
+        <div class="data-grid">
+          <div class="data-item">
+            <span class="label">STW</span>
+            <span class="value mono" id="val-stw">—</span>
+            <span class="unit">kts</span>
+          </div>
+          <div class="data-item">
+            <span class="label">Heading</span>
+            <span class="value mono" id="val-heading">—</span>
+            <span class="unit">°</span>
+          </div>
+          <div class="data-item">
+            <span class="label">Current</span>
+            <span class="value mono" id="val-current-spd">—</span>
+            <span class="unit">kts</span>
+          </div>
+          <div class="data-item">
+            <span class="label">Curr Dir</span>
+            <span class="value mono" id="val-current-dir">—</span>
+            <span class="unit">°</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <label for="chart-select" class="chart-select-label">Chart variable</label>
+        <select id="chart-select">
+          <option value="tws">True Wind Speed (kts)</option>
+          <option value="aws">Apparent Wind Speed (kts)</option>
+          <option value="twd">True Wind Direction (°)</option>
+          <option value="sog">Speed Over Ground (kts)</option>
+          <option value="stw">Speed Through Water (kts)</option>
+          <option value="current_spd">Current Speed (kts)</option>
+        </select>
       </section>
     </aside>
 
-    <section id="timeseries-panel" class="timeseries-panel">
+    <section id="timeseries-panel">
       <div class="timeseries-header">
         <div>
-          <h2>Pollutant Time Series</h2>
-          <p id="timeseries-subtitle">
-            Click a point on the chart to jump to that location on the map.
-          </p>
+          <h2 id="chart-title">True Wind Speed</h2>
+          <p class="timeseries-sub">Click a point to jump to that location on the map.</p>
         </div>
-
-        <button
-          id="timeseries-toggle"
-          class="timeseries-toggle"
-          type="button"
-          aria-expanded="true"
-        >
-          Minimize
-        </button>
+        <button id="timeseries-toggle" type="button" aria-expanded="true">Minimize</button>
       </div>
-
       <div class="timeseries-body">
         <canvas id="timeseries-chart"></canvas>
       </div>
