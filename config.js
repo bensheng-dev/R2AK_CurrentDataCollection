@@ -9,7 +9,7 @@ const CONFIG = {
   // Notehub API token – generate one at notehub.io → Account → API Tokens
   // IMPORTANT: for a public site, route your data through a Netlify serverless
   // function instead of exposing this token here.
-  NOTEHUB_TOKEN: "YOUR_NOTEHUB_API_TOKEN_HERE",
+  NOTEHUB_TOKEN: "api_key_9QYBZiv1EqrFgfg3ydGVUsaMcty+etR0PAHWRr98rAI=",
 
   // How many notes to fetch per refresh (max 250)
   PAGE_SIZE: 250,
