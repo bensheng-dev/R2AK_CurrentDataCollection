@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SV Elusive R2AK Air Pollution Tracker</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <main id="app">
+    <div id="map"></div>
+
+    <aside id="info-panel">
+      <header>
+        <p class="eyebrow">Race2AK</p>
+        <h1>SV Elusive R2AK Air Pollution Tracker</h1>
+        <p class="subtitle">
+          Air-quality observations from a moving vessel during Race to Alaska.
+        </p>
+        <p id="status-pill" class="status-pill">Loading...</p>
+      </header>
+<!--
+      <section class="card">
+        <h2>Current Location</h2>
+        <p id="current-location">—</p>
+      </section>
+-->
+      <section class="card">
+        <h2>Last Updated</h2>
+        <p id="last-updated">—</p>
+      </section>
+
+      <details class="card" open>
+        <summary>Current Pollutants</summary>
+        <div id="pollutant-list" class="pollutant-list"></div>
+      </details>
+
+      <section class="card">
+        <label for="pollutant-select">Plume pollutant</label>
+        <select id="pollutant-select"></select>
+      </section>
+
+      <section class="card">
+        <h2>Legend</h2>
+        <div id="legend"></div>
+      </section>
+    </aside>
+
+    <section id="timeseries-panel" class="timeseries-panel">
+      <div class="timeseries-header">
+        <div>
+          <h2>Pollutant Time Series</h2>
+          <p id="timeseries-subtitle">
+            Click a point on the chart to jump to that location on the map.
+          </p>
+        </div>
+
+        <button
+          id="timeseries-toggle"
+          class="timeseries-toggle"
+          type="button"
+          aria-expanded="true"
+        >
+          Minimize
+        </button>
+      </div>
+
+      <div class="timeseries-body">
+        <canvas id="timeseries-chart"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
