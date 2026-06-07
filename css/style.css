@@ -295,9 +295,9 @@ select:focus {
   font-family: var(--display);
 }
 
-.leaflet-tile {
+/*.leaflet-tile {
   filter: brightness(0.75) saturate(0.6) hue-rotate(180deg);
-}
+}*/
 
 .leaflet-popup-content-wrapper {
   background: var(--surface2);
@@ -327,6 +327,45 @@ select:focus {
 
 .popup-content strong {
   color: var(--accent);
+}
+
+.vessel-arrow-icon {
+  background: transparent;
+  border: none;
+}
+
+.vessel-arrow-wrap {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  transform-origin: center center;
+}
+
+.vessel-arrow-wrap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  background: rgba(15, 23, 42, 0.16);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+}
+
+.vessel-arrow {
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 24px solid #0f172a;
+  filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.35));
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────── */
