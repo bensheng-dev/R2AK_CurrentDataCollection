@@ -30,7 +30,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 #app {
   display: grid;
   grid-template-columns: var(--panel-w) 1fr;
-  grid-template-rows: 1fr var(--ts-h);
+  grid-template-rows: 1fr auto;  /* map takes all space, chart takes only what it needs */
   height: 100vh;
 }
 
@@ -38,6 +38,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   grid-column: 2;
   grid-row: 1;
   z-index: 1;
+  min-height: 0;
 }
 
 #info-panel {
@@ -57,13 +58,20 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  transition: height 0.3s ease;
   z-index: 10;
   overflow: hidden;
+  /* height is controlled by JS, no fixed --ts-h needed */
 }
 
-#timeseries-panel.collapsed {
-  height: 44px;
+#timeseries-panel.collapsed .timeseries-body {
+  display: none;
+}
+
+.timeseries-body {
+  flex: 1;
+  padding: 8px 16px 10px;
+  min-height: 0;
+  height: 180px;  /* only applies when expanded */
 }
 
 /* ── Header ─────────────────────────────────────────────────── */

@@ -101,7 +101,7 @@ function updateMap(points) {
 
   // Latest point as boat icon
   const latest = points[0];
-  boatMarker = L.marker([latest.lat, latest.lon], { icon: buildBoatIcon() })
+  boatMarker = L.marker([latest.lat, latest.lon], { icon: buildBoatIcon(latest.cog) })
     .bindPopup(buildPopup(latest))
     .addTo(map);
 
@@ -353,4 +353,42 @@ function timeAgo(ms) {
   const min = Math.floor(ms / 60000);
   if (min < 60) return `${min}m ago`;
   return `${Math.floor(min / 60)}h ago`;
+}
+
+function buildBoatIcon(cog) {
+  const rotation = cog || 0;
+  return L.divIcon({
+    className: '',
+    html: `<div style="transform: rotate(${rotation}deg); transform-origin: center center;">
+      <svg width="24" height="32" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg">
+        <!-- Arrow pointing up = North, rotated by COG -->
+        <polygon points="12,0 24,28 12,22 0,28" fill="#1e3a5f" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+    </div>`,
+    iconSize: [24, 32],
+    iconAnchor: [12, 16],
+  });
+}
+
+function bindUI() {
+  document.getElementById('chart-select').addEventListener('change', e => {
+    chartField = e.target.value;
+    if (allPoints.length) updateChart(allPoints);
+  });
+
+  document.getElementById('timeseries-toggle').addEventListener('click', () => {
+    tsExpanded = !tsExpanded;
+    const panel  = document.getElementById('timeseries-panel');
+    const btn    = document.getElementById('timeseries-toggle');
+
+    panel.classList.toggle('collapsed', !tsExpanded);
+    btn.textContent = tsExpanded ? 'Minimize' : 'Expand';
+    btn.setAttribute('aria-expanded', tsExpanded);
+
+    // Give Leaflet a tick to see the new map size, then resize
+    setTimeout(() => {
+      map.invalidateSize();
+      if (tsExpanded) chart.resize();
+    }, 50);
+  });
 }
