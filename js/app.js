@@ -253,8 +253,7 @@ function drawCompass(twd) {
 async function fetchData() {
   setStatus('loading');
   try {
-    const url = `/.netlify/functions/notehub?pageSize=${CONFIG.PAGE_SIZE}`;
-    const res = await fetch(url);
+    const res = await fetch(`/.netlify/functions/notehub?pageSize=${CONFIG.PAGE_SIZE}`);
 
     if (!res.ok) throw new Error(`Notehub ${res.status}`);
 

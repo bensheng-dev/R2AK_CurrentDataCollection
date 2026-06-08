@@ -1,10 +1,8 @@
-const PROJECT_UID = "com.gmail.ben.ak.sheng:r2ak_data";
-
 exports.handler = async (event) => {
   const pageSize = event.queryStringParameters?.pageSize || 250;
 
   const response = await fetch(
-    `https://api.notefile.net/v1/projects/${PROJECT_UID}/events?pageSize=${pageSize}`,
+    `https://api.notefile.net/v1/projects/com.gmail.ben.ak.sheng:r2ak_data/events?pageSize=${pageSize}`,
     {
       headers: {
         "X-Session-Token": process.env.NOTEHUB_TOKEN,
