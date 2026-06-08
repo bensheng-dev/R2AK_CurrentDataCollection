@@ -108,7 +108,12 @@ function updateMap(points) {
     .bindPopup(buildPopup(latest))
     .addTo(map);
 
-  map.panTo([latest.lat, latest.lon]);
+  // First load: zoom in tight; subsequent updates: just pan
+  if (markers.length === 0 && !boatMarker) {
+    map.setView([latest.lat, latest.lon], 13);
+  } else {
+    map.panTo([latest.lat, latest.lon]);
+  }
 }
 
 function buildPopup(p) {
@@ -310,7 +315,7 @@ function parseEvent(e) {
   const utc = `${pstStr} ${tzLabel}`;
 
   return {
-    _ts:         e.when ? new Date(e.when).getTime() : 0,
+    _ts:         e.when ? e.when * 1000 : 0,  // Notehub `when` is Unix seconds → convert to ms
     utc,
     lat:         b['Latitude']             ?? null,
     lon:         b['Longitude']            ?? null,
