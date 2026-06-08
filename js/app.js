@@ -293,7 +293,21 @@ function parseEvent(e) {
   const h = b['Hour']   ?? 0;
   const m = b['Minute'] ?? 0;
   const s = b['Second'] ?? 0;
-  const utc = `${pad(h)}:${pad(m)}:${pad(s)} UTC`;
+
+  // Convert UTC time fields to Pacific time (PST/PDT) for display
+  const utcDate = new Date(Date.UTC(2000, 0, 1, h, m, s)); // date is arbitrary, only time matters
+  const pstStr = utcDate.toLocaleTimeString('en-US', {
+    timeZone: 'America/Vancouver',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  const tzLabel = utcDate.toLocaleTimeString('en-US', {
+    timeZone: 'America/Vancouver',
+    timeZoneName: 'short',
+  }).split(' ').pop(); // extracts "PST" or "PDT"
+  const utc = `${pstStr} ${tzLabel}`;
 
   return {
     _ts:         e.when ? new Date(e.when).getTime() : 0,
