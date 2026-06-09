@@ -296,10 +296,26 @@ select:focus {
   flex-shrink: 0;
 }
 
-.timeseries-header h2 {
+.timeseries-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.timeseries-title-row h2 {
   font-size: 13px;
   font-weight: 700;
   color: #fff;
+  white-space: nowrap;
+}
+
+.timeseries-title-row select {
+  width: auto;
+  font-size: 11px;
+  padding: 4px 28px 4px 8px;
+  background-color: var(--surface2);
+  border-color: var(--border);
 }
 
 .timeseries-sub {
@@ -412,4 +428,16 @@ select:focus {
   #map { grid-column: 1; grid-row: 1; }
   #info-panel { grid-column: 1; grid-row: 2; max-height: none; overflow-y: auto; }
   #timeseries-panel { grid-column: 1; grid-row: 3; }
+}
+
+/* ── Error card ──────────────────────────────────────────────── */
+.error-text {
+  font-size: 11px;
+  color: var(--danger);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.error-text.no-errors {
+  color: var(--accent3);
 }

@@ -108,24 +108,25 @@
         </div>
       </section>
 
+      <!-- Error log replaces chart variable card -->
       <section class="card">
-        <label for="chart-select" class="chart-select-label">Chart variable</label>
-        <select id="chart-select">
-          <option value="tws">True Wind Speed (kts)</option>
-          <option value="aws">Apparent Wind Speed (kts)</option>
-          <option value="twd">True Wind Direction (°)</option>
-          <option value="sog">Speed Over Ground (kts)</option>
-          <option value="stw">Speed Through Water (kts)</option>
-          <option value="current_spd">Current Speed (kts)</option>
-        </select>
+        <h2>System Errors</h2>
+        <p id="val-error" class="mono error-text">—</p>
       </section>
     </aside>
 
     <section id="timeseries-panel">
       <div class="timeseries-header">
-        <div>
-          <h2 id="chart-title">True Wind Speed</h2>
-          <p class="timeseries-sub">Click a point to jump to that location on the map.</p>
+        <div class="timeseries-title-row">
+          <h2 id="chart-title">True Wind Speed (kts)</h2>
+          <select id="chart-select">
+            <option value="tws">True Wind Speed (kts)</option>
+            <option value="aws">Apparent Wind Speed (kts)</option>
+            <option value="twd">True Wind Direction (°)</option>
+            <option value="sog">Speed Over Ground (kts)</option>
+            <option value="stw">Speed Through Water (kts)</option>
+            <option value="current_spd">Current Speed (kts)</option>
+          </select>
         </div>
         <button id="timeseries-toggle" type="button" aria-expanded="true">Minimize</button>
       </div>

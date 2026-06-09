@@ -180,7 +180,9 @@ function updateChart(points) {
     return (v !== null && v !== undefined) ? +v.toFixed(2) : null;
   });
   chart.update();
-  document.getElementById('chart-title').textContent = field.label;
+  // Title is now the select itself; keep the h2 in sync for when chart is minimized
+  const titleEl = document.getElementById('chart-title');
+  if (titleEl) titleEl.textContent = field.label;
 }
 
 // ── Sidebar data display ─────────────────────────────────────
@@ -198,6 +200,13 @@ function updateSidebar(p) {
   set('val-current-spd', fmt(p.current_spd, 2));
   set('val-current-dir', fmt(p.current_dir, 0));
   set('last-updated', p.utc || '—');
+  // Error string
+  const errEl = document.getElementById('val-error');
+  if (errEl) {
+    const errText = p.error && p.error.trim().length > 0 ? p.error : 'None';
+    errEl.textContent = errText;
+    errEl.className = 'mono error-text' + (errText === 'None' ? ' no-errors' : '');
+  }
   drawCompass(p.twd);
 }
 
@@ -307,10 +316,11 @@ function parseEvent(e) {
     second: '2-digit',
     hour12: false,
   }) : '--';
-  const tzLabel = tsDate ? tsDate.toLocaleTimeString('en-US', {
-    timeZone: 'America/Vancouver',
-    timeZoneName: 'short',
-  }).split(' ').pop() : '';
+  const tzLabel = tsDate
+    ? new Intl.DateTimeFormat('en-US', { timeZone: 'America/Vancouver', timeZoneName: 'short' })
+        .formatToParts(tsDate)
+        .find(p => p.type === 'timeZoneName')?.value ?? ''
+    : '';
   const utc = `${timeStr} ${tzLabel}`.trim();
 
   return {
