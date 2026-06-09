@@ -30,7 +30,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 #app {
   display: grid;
   grid-template-columns: var(--panel-w) 1fr;
-  grid-template-rows: 1fr auto;  /* map takes all space, chart takes only what it needs */
+  grid-template-rows: 1fr auto;
   height: 100vh;
 }
 
@@ -52,7 +52,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 }
 
 #timeseries-panel.collapsed {
-  height: 44px;  /* just the header row */
+  height: 44px;
 }
 
 #timeseries-panel.collapsed .timeseries-body {
@@ -63,7 +63,6 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   --ts-h: 220px;
 }
 
-/* 2. panel has fixed height when expanded */
 #timeseries-panel {
   grid-column: 2;
   grid-row: 2;
@@ -76,7 +75,6 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   height: var(--ts-h);
 }
 
-/* 3. body fills whatever the panel leaves after the header */
 .timeseries-body {
   flex: 1;
   padding: 8px 16px 10px;
@@ -119,9 +117,40 @@ header h1 {
   font-size: 11px;
   color: var(--muted);
   letter-spacing: 0.05em;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
+/* ── Modulair link ───────────────────────────────────────────── */
+.modulair-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.modulair-link::before {
+  content: '↗';
+  font-size: 11px;
+}
+
+.modulair-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0, 200, 255, 0.05);
+}
+
+/* ── Status pill ─────────────────────────────────────────────── */
 .status-pill {
   display: inline-block;
   font-size: 11px;
@@ -295,12 +324,6 @@ select:focus {
   color: var(--accent);
 }
 
-.timeseries-body {
-  flex: 1;
-  padding: 8px 16px 10px;
-  min-height: 0;
-}
-
 #timeseries-chart {
   width: 100% !important;
   height: 100% !important;
@@ -311,10 +334,6 @@ select:focus {
   background: #0a0e14;
   font-family: var(--display);
 }
-
-/*.leaflet-tile {
-  filter: brightness(0.75) saturate(0.6) hue-rotate(180deg);
-}*/
 
 .leaflet-popup-content-wrapper {
   background: var(--surface2);
@@ -346,10 +365,7 @@ select:focus {
   color: var(--accent);
 }
 
-.vessel-arrow-icon {
-  background: transparent;
-  border: none;
-}
+.vessel-arrow-icon { background: transparent; border: none; }
 
 .vessel-arrow-wrap {
   position: relative;
@@ -361,10 +377,8 @@ select:focus {
 .vessel-arrow-wrap::after {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 28px;
-  height: 28px;
+  left: 50%; top: 50%;
+  width: 28px; height: 28px;
   transform: translate(-50%, -50%);
   background: rgba(15, 23, 42, 0.16);
   border: 2px solid rgba(255, 255, 255, 0.9);
@@ -373,11 +387,9 @@ select:focus {
 
 .vessel-arrow {
   position: absolute;
-  left: 50%;
-  top: 2px;
+  left: 50%; top: 2px;
   z-index: 2;
-  width: 0;
-  height: 0;
+  width: 0; height: 0;
   transform: translateX(-50%);
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
