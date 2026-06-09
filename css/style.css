@@ -441,3 +441,12 @@ select:focus {
 .error-text.no-errors {
   color: var(--accent3);
 }
+
+/* ── Stale position note ─────────────────────────────────────── */
+.pos-stale-note {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--accent2);
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+}

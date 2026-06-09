@@ -189,6 +189,17 @@ function updateChart(points) {
 function updateSidebar(p) {
   set('val-lat',         fmt(p.lat, 5));
   set('val-lon',         fmt(p.lon, 5));
+
+  // Show stale position warning under lat/lon
+  const posNote = document.getElementById('val-pos-note');
+  if (posNote) {
+    if (p._positionStale && p._positionStaleSince) {
+      posNote.textContent = `⚠ Last GPS fix: ${p._positionStaleSince}`;
+      posNote.style.display = 'block';
+    } else {
+      posNote.style.display = 'none';
+    }
+  }
   set('val-sog',         fmt(p.sog, 1));
   set('val-cog',         fmt(p.cog, 0));
   set('val-aws',         fmt(p.aws, 1));
@@ -284,17 +295,18 @@ async function fetchData() {
       .map(parseEvent);
 
     // Forward-fill lat/lon: if a point has 0/null, use the last known good position
-    let lastGoodLat = null, lastGoodLon = null;
-    // Walk oldest→newest to fill forward, then reverse back
+    let lastGoodLat = null, lastGoodLon = null, lastGoodPosTime = null;
     for (let i = parsed.length - 1; i >= 0; i--) {
       const p = parsed[i];
       if (p.lat && p.lon) {
         lastGoodLat = p.lat;
         lastGoodLon = p.lon;
+        lastGoodPosTime = p.utc;
       } else if (lastGoodLat !== null) {
         p.lat = lastGoodLat;
         p.lon = lastGoodLon;
-        p._positionStale = true; // flag so we can style it differently if needed
+        p._positionStale = true;
+        p._positionStaleSince = lastGoodPosTime; // timestamp of last known good fix
       }
     }
 
