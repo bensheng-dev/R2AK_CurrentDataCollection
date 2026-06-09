@@ -279,10 +279,26 @@ async function fetchData() {
     const json = await res.json();
     const events = json.events || [];
 
-    allPoints = events
+    const parsed = events
       .filter(e => e.body && e.body['Latitude'] !== undefined)
-      .map(parseEvent)
-      .filter(p => p.lat !== null && p.lon !== null);
+      .map(parseEvent);
+
+    // Forward-fill lat/lon: if a point has 0/null, use the last known good position
+    let lastGoodLat = null, lastGoodLon = null;
+    // Walk oldest→newest to fill forward, then reverse back
+    for (let i = parsed.length - 1; i >= 0; i--) {
+      const p = parsed[i];
+      if (p.lat && p.lon) {
+        lastGoodLat = p.lat;
+        lastGoodLon = p.lon;
+      } else if (lastGoodLat !== null) {
+        p.lat = lastGoodLat;
+        p.lon = lastGoodLon;
+        p._positionStale = true; // flag so we can style it differently if needed
+      }
+    }
+
+    allPoints = parsed.filter(p => p.lat !== null && p.lon !== null);
 
     if (!allPoints.length) {
       setStatus('stale', 'No data');
