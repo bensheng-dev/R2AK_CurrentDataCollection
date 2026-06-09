@@ -29,7 +29,10 @@
       </section>
 
       <section class="card" id="position-card">
-        <h2>Position</h2>
+        <div class="card-title-row">
+          <h2>Position</h2>
+          <span id="val-pos-note" class="status-pill pos-stale-pill" style="display:none"></span>
+        </div>
         <div class="data-grid">
           <div class="data-item">
             <span class="label">Lat</span>
@@ -39,7 +42,6 @@
             <span class="label">Lon</span>
             <span class="value mono" id="val-lon">—</span>
           </div>
-        <p id="val-pos-note" class="pos-stale-note" style="display:none"></p>
           <div class="data-item">
             <span class="label">SOG</span>
             <span class="value mono" id="val-sog">—</span>

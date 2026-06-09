@@ -190,12 +190,12 @@ function updateSidebar(p) {
   set('val-lat',         fmt(p.lat, 5));
   set('val-lon',         fmt(p.lon, 5));
 
-  // Show stale position warning under lat/lon
+  // Show stale position pill beside Position title
   const posNote = document.getElementById('val-pos-note');
   if (posNote) {
     if (p._positionStale && p._positionStaleSince) {
-      posNote.textContent = `⚠ Last GPS fix: ${p._positionStaleSince}`;
-      posNote.style.display = 'block';
+      posNote.textContent = `GPS lost · last fix ${p._positionStaleSince}`;
+      posNote.style.display = 'inline-block';
     } else {
       posNote.style.display = 'none';
     }
