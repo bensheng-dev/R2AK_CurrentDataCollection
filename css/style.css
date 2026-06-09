@@ -442,11 +442,26 @@ select:focus {
   color: var(--accent3);
 }
 
-/* ── Stale position note ─────────────────────────────────────── */
-.pos-stale-note {
-  font-size: 10px;
-  font-family: var(--mono);
+/* ── Card title row (title + pill inline) ────────────────────── */
+.card-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.card-title-row h2 {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.pos-stale-pill {
+  border-color: var(--accent2);
   color: var(--accent2);
-  margin-bottom: 8px;
-  letter-spacing: 0.03em;
+  font-size: 9px;
+  padding: 2px 7px;
+  line-height: 1.4;
+  white-space: nowrap;
+  vertical-align: middle;
 }
