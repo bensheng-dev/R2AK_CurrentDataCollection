@@ -291,7 +291,7 @@ async function fetchData() {
 
     const latest = allPoints[0];
     const ageMs  = Date.now() - (latest._ts || 0);
-    const isLive = ageMs < 20 * 60 * 1000; // <20 min = live
+    const isLive = ageMs < 5 * 60 * 1000; // <20 min = live
     setStatus(isLive ? 'live' : 'stale', isLive ? 'Live' : 'Last seen ' + timeAgo(ageMs));
 
     updateSidebar(latest);
