@@ -12,6 +12,7 @@ let boatMarker  = null;
 let chart       = null;
 let chartField  = 'tws';
 let tsExpanded  = true;
+let firstLoad   = true; // zoom to boat on first data fetch only
 
 // ── Field map: chart select value → note body key + label ───
 const FIELDS = {
@@ -109,8 +110,9 @@ function updateMap(points) {
     .addTo(map);
 
   // First load: zoom in tight; subsequent updates: just pan
-  if (markers.length === 0 && !boatMarker) {
+  if (firstLoad) {
     map.setView([latest.lat, latest.lon], 13);
+    firstLoad = false;
   } else {
     map.panTo([latest.lat, latest.lon]);
   }
@@ -295,24 +297,21 @@ async function fetchData() {
 
 function parseEvent(e) {
   const b = e.body;
-  const h = b['Hour']   ?? 0;
-  const m = b['Minute'] ?? 0;
-  const s = b['Second'] ?? 0;
 
-  // Convert UTC time fields to Pacific time (PST/PDT) for display
-  const utcDate = new Date(Date.UTC(2000, 0, 1, h, m, s)); // date is arbitrary, only time matters
-  const pstStr = utcDate.toLocaleTimeString('en-US', {
+  // Use the Notehub Unix timestamp for accurate Pacific time display
+  const tsDate = e.when ? new Date(e.when * 1000) : null;
+  const timeStr = tsDate ? tsDate.toLocaleTimeString('en-US', {
     timeZone: 'America/Vancouver',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: false,
-  });
-  const tzLabel = utcDate.toLocaleTimeString('en-US', {
+  }) : '--';
+  const tzLabel = tsDate ? tsDate.toLocaleTimeString('en-US', {
     timeZone: 'America/Vancouver',
     timeZoneName: 'short',
-  }).split(' ').pop(); // extracts "PST" or "PDT"
-  const utc = `${pstStr} ${tzLabel}`;
+  }).split(' ').pop() : '';
+  const utc = `${timeStr} ${tzLabel}`.trim();
 
   return {
     _ts:         e.when ? e.when * 1000 : 0,  // Notehub `when` is Unix seconds → convert to ms
