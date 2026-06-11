@@ -22,7 +22,7 @@ exports.handler = async (event) => {
     // Fetch all pages until Notehub returns fewer events than PAGE_SIZE
     while (hasMore) {
       let url = `${BASE_URL}?pageSize=${PAGE_SIZE}&pageNum=${pageNum}&sortBy=captured&sortOrder=desc`;
-      if (startDate) url += `&startDate=${startDate}`;
+      if (startDate) url += `&startDate=${startDate}`; // Unix timestamp (seconds)
 
       const response = await fetch(url, {
         headers: {
