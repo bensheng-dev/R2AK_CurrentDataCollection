@@ -283,7 +283,13 @@ function drawCompass(twd) {
 async function fetchData() {
   setStatus('loading');
   try {
-    const res = await fetch('/.netlify/functions/notehub');
+    // Start from yesterday midnight UTC — full current day + prior day context
+    const yesterday = new Date();
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    yesterday.setUTCHours(0, 0, 0, 0);
+    const startDate = yesterday.toISOString();
+
+    const res = await fetch(`/.netlify/functions/notehub?startDate=${encodeURIComponent(startDate)}`);
 
     if (!res.ok) throw new Error(`Notehub ${res.status}`);
 
