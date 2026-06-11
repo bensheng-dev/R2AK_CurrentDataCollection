@@ -28,8 +28,10 @@ static const int cs   = 4;
 
 unsigned long lastSampleTime  = 0;
 unsigned long lastTransmitTime = 0;
-const unsigned long SAMPLE_INTERVAL   = 5000;   // 5 seconds  – IMU averaging & compute
-const unsigned long TRANSMIT_INTERVAL = 300000;  // 5 minutes – SD + Blues transmit
+
+// CHANGED: Removed 'const' so the interval can be modified dynamically by Notehub
+unsigned long SAMPLE_INTERVAL = 5000;          // Defaults to 5 seconds averaging window for IMU, GPS, and NMEA2000 data
+unsigned long TRANSMIT_INTERVAL = 300000;  // 5 minutes – SD + Blues transmit
 
 File dataFile;
 
@@ -72,6 +74,7 @@ float TWS_y;
 float TWD; //True Wind Direction
 
 float imu_heading = 0; 
+float IMU_FIXED_OFFSET = 107.8; // 242 - 115
 
 // NMEA2000 message handler
 void HandleNMEA2000Msg(const tN2kMsg &msg) {
@@ -152,7 +155,6 @@ double sogYSum = 0;
 int sogCount = 0;
 
 // IMU (I2C)
-#define BNO08X_RESET -1
 Adafruit_BNO08x bno085(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
 
@@ -160,7 +162,6 @@ sh2_SensorValue_t sensorValue;
 double imuSinSum = 0;
 double imuCosSum = 0;
 int imuCount = 0;
-
 
 // IMU DATA READING
 void updateIMU() {
@@ -184,8 +185,13 @@ void updateIMU() {
     float heading = yaw * 180.0f / PI; //convert rad to deg
     if (heading < 0) heading += 360.0f;
 
-    // Update global tracking heading variable
-    imu_heading = heading;
+    // Apply fixed alignment offset
+    float correctedHeading = heading - IMU_FIXED_OFFSET;
+
+    if (correctedHeading < 0) correctedHeading += 360.0f;
+    if (correctedHeading >= 360.0f) correctedHeading -= 360.0f;
+
+    imu_heading = correctedHeading;
 
     double headingRad = heading * PI / 180.0;
 
@@ -197,7 +203,6 @@ void updateIMU() {
 
 // GNSS DATA READING
 void readGNSS() {
-  // Only sample and accumulate when the u-blox peripheral drops a new complete PVT frame
   if (myGNSS.getPVT() && myGNSS.getInvalidLlh() == false) {
     lat = myGNSS.getLatitude() / 10000000.0;
     lon = myGNSS.getLongitude() / 10000000.0;
@@ -280,80 +285,96 @@ void writeToSD() {
 
   // Timestamp
   dataFile.print("UTC: ");
-  if (hour < 10) {
-    dataFile.print("0");
-    dataFile.print(hour);   
-    dataFile.print(":");
-  }
-  if (minute < 10) {
-    dataFile.print("0");
-    dataFile.print(minute); 
-    dataFile.print(":");
-  } 
-  if (second < 10) {
-    dataFile.print("0");
-    dataFile.println(second);
-  }
+  if (hour < 10) { dataFile.print("0"); dataFile.print(hour); dataFile.print(":"); }
+  if (minute < 10) { dataFile.print("0"); dataFile.print(minute); dataFile.print(":"); } 
+  if (second < 10) { dataFile.print("0"); dataFile.println(second); }
   
-
   // Position & GNSS
-  dataFile.print("Latitude: ");          
-  dataFile.println(lat, 6);
-  dataFile.print("Longitude: ");         
-  dataFile.println(lon, 6);
-  dataFile.print("Altitude: ");          
-  dataFile.println(altitude);
-  dataFile.print("SOG (knots): ");       
-  dataFile.println(SOG);
-  dataFile.print("COG (deg): ");         
-  dataFile.println(COG);
+  dataFile.print("Latitude: "); dataFile.println(lat, 6);
+  dataFile.print("Longitude: "); dataFile.println(lon, 6);
+  dataFile.print("Altitude: "); dataFile.println(altitude);
+  dataFile.print("SOG (knots): "); dataFile.println(SOG);
+  dataFile.print("COG (deg): "); dataFile.println(COG);
 
   // IMU
-  dataFile.print("IMU Heading (avg): "); 
-  dataFile.println(imu_heading);
+  dataFile.print("IMU Heading (avg): "); dataFile.println(imu_heading);
 
   // Apparent wind
-  dataFile.print("Apparent Wind Speed (knots): "); 
-  dataFile.println(AWS);
-  dataFile.print("Apparent Wind Angle (deg): ");   
-  dataFile.println(AWA);
-  dataFile.print("AWS X-Component: ");             
-  dataFile.println(AWS_x);
-  dataFile.print("AWS Y-Component: ");             
-  dataFile.println(AWS_y);
+  dataFile.print("Apparent Wind Speed (knots): "); dataFile.println(AWS);
+  dataFile.print("Apparent Wind Angle (deg): "); dataFile.println(AWA);
+  dataFile.print("AWS X-Component: "); dataFile.println(AWS_x);
+  dataFile.print("AWS Y-Component: "); dataFile.println(AWS_y);
 
   // True wind
-  dataFile.print("True Wind Speed (knots): ");     
-  dataFile.println(TWS);
-  dataFile.print("True Wind Direction (deg): ");   
-  dataFile.println(TWD);
+  dataFile.print("True Wind Speed (knots): "); dataFile.println(TWS);
+  dataFile.print("True Wind Direction (deg): "); dataFile.println(TWD);
 
   // Speed through water
-  dataFile.print("Speed Through Water (knots): "); 
-  dataFile.println(STW);
-  dataFile.print("STW X-Component: ");             
-  dataFile.println(STW_x);
-  dataFile.print("STW Y-Component: ");             
-  dataFile.println(STW_y);
+  dataFile.print("Speed Through Water (knots): "); dataFile.println(STW);
+  dataFile.print("STW X-Component: "); dataFile.println(STW_x);
+  dataFile.print("STW Y-Component: "); dataFile.println(STW_y);
 
   // Current
-  dataFile.print("Current Speed (knots): ");       
-  dataFile.println(CurrentSpeed);
-  dataFile.print("Current Direction (deg): ");     
-  dataFile.println(CurrentDir);
-  dataFile.print("Current X-Component: ");         
-  dataFile.println(Current_x);
-  dataFile.print("Current Y-Component: ");         
-  dataFile.println(Current_y);
+  dataFile.print("Current Speed (knots): "); dataFile.println(CurrentSpeed);
+  dataFile.print("Current Direction (deg): "); dataFile.println(CurrentDir);
+  dataFile.print("Current X-Component: "); dataFile.println(Current_x);
+  dataFile.print("Current Y-Component: "); dataFile.println(Current_y);
 
   // Errors
-  dataFile.print("Errors: ");
-  dataFile.println(error.length() > 0 ? error : "None");
+  dataFile.print("Errors: "); dataFile.println(error.length() > 0 ? error : "None");
 
   dataFile.println("---");
   dataFile.close();
-
   Serial.println("Data written to SD.");
+}
+
+// ADDED: Environment Sync Function to read cache from local storage
+void checkCloudInterval() {
+  J *req = notecard.newRequest("env.get");
+  if (req == NULL) return;
+
+  // Fetch all three in one call — no "name" filter
+  J *rsp = notecard.requestAndResponse(req);
+  if (rsp == NULL) return;
+
+  J *body = JGetObject(rsp, "body");
+  if (body != NULL) {
+
+    // avg_interval
+    const char *intervalStr = JGetString(body, "avg_interval");
+    if (intervalStr && strlen(intervalStr) > 0) {
+      int cloudValueSeconds = atoi(intervalStr);
+      if (cloudValueSeconds >= 1) {
+        SAMPLE_INTERVAL = cloudValueSeconds * 1000;
+        Serial.print("Sample interval updated to: ");
+        Serial.println(SAMPLE_INTERVAL);
+      }
+    }
+
+    // imu_heading_offset
+    const char *offsetStr = JGetString(body, "imu_heading_offset");
+    if (offsetStr && strlen(offsetStr) > 0) {
+      float cloudOffset = atof(offsetStr);
+      if (cloudOffset >= 0.0 && cloudOffset < 360.0) {
+        IMU_FIXED_OFFSET = cloudOffset;
+        Serial.print("IMU offset updated to: ");
+        Serial.println(IMU_FIXED_OFFSET);
+      }
+    }
+
+    // transmit_interval
+    const char *transmitStr = JGetString(body, "transmit_interval");
+    if (transmitStr && strlen(transmitStr) > 0) {
+      int cloudValueSeconds = atoi(transmitStr);
+      if (cloudValueSeconds >= 10) {
+        TRANSMIT_INTERVAL = (unsigned long)cloudValueSeconds * 1000;
+        Serial.print("Transmit interval updated to: ");
+        Serial.println(TRANSMIT_INTERVAL);
+      }
+    }
+  }
+
+  notecard.deleteResponse(rsp);
 }
 
 // =====================================================
@@ -389,7 +410,7 @@ void setup() {
   if (req != NULL) {
     JAddStringToObject(req, "product", productUID);
     JAddStringToObject(req, "mode", "continuous");
-    JAddNumberToObject(req, "outbound", 1); // sync outbound queue every 1 minute max
+    JAddNumberToObject(req, "outbound", 1); 
     NoteRequest(req);
   } else {
     error += "hub.set request failed; ";
@@ -417,12 +438,15 @@ void setup() {
   }
 
   // IMU
-  if (!bno085.begin_I2C()) {
+  delay(500); // give BNO085 time to boot
+  if (!bno085.begin_I2C(0x4A, &Wire)) {
     Serial.println("IMU failed");
     error += "IMU init failed; ";
+  } else {
+    Serial.println("IMU OK");
+    bno085.enableReport(SH2_ROTATION_VECTOR);
+    delay(100); // give report time to enable
   }
-
-  bno085.enableReport(SH2_ROTATION_VECTOR);
 
   NMEA2000.SetProductInformation("1", 1, "ESP32 Feather", "1.0", "1.0");
   NMEA2000.SetDeviceInformation(25, 130, 75, 2046);
@@ -432,20 +456,7 @@ void setup() {
 
   pinMode(LED_PIN, OUTPUT);
 
-  // Initial SD write
-  dataFile = SD.open("/datalog.txt", FILE_WRITE);
-  if (dataFile) {
-    dataFile.println("Hello from ESP32!");
-    dataFile.println("Steve the GOAT");
-    dataFile.close();
-    Serial.println("Data written successfully.");
-  } else {
-    Serial.println("Error opening file.");
-    error += "Initial SD file open failed; ";
-  }
-
   Serial.println("System ready");
-
 }
 
 void loop() {
@@ -510,21 +521,10 @@ void loop() {
     if (CurrentDir < 0) CurrentDir += 360.0;
 
     // Reset values for next averaging interval
-    imuSinSum = 0;
-    imuCosSum = 0;
-    imuCount = 0;
-
-    sogXSum = 0;
-    sogYSum = 0;
-    sogCount = 0;
-
-    awsXSum = 0;
-    awsYSum = 0;
-    awsCount = 0;
-
-    stwXSum = 0;
-    stwYSum = 0;
-    stwCount = 0;
+    imuSinSum = 0; imuCosSum = 0; imuCount = 0;
+    sogXSum = 0; sogYSum = 0; sogCount = 0;
+    awsXSum = 0; awsYSum = 0; awsCount = 0;
+    stwXSum = 0; stwYSum = 0; stwCount = 0;
 
     // prints
     Serial.print("Lat: "); Serial.println(lat, 6);
@@ -536,18 +536,21 @@ void loop() {
     Serial.print("True wind direction (deg): "); Serial.println(TWD);
     Serial.print("True current speed (knots): "); Serial.println(CurrentSpeed);
     Serial.print("True current direction (deg): "); Serial.println(CurrentDir);
+
+    // CHANGED: Added function call to fetch remote values from local cache
+    checkCloudInterval(); 
   } 
 
-    if (error.length() > 0) {
-      Serial.print("Errors: ");
-      Serial.println(error);
-    }
+  if (error.length() > 0) {
+    Serial.print("Errors: ");
+    Serial.println(error);
+  }
 
-    if (millis() - lastTransmitTime >= TRANSMIT_INTERVAL) {
-      lastTransmitTime = millis();
-      error = ""; // Reset errors at the start of each transmit cycle
-      Serial.println("Transmitting data...");
-      writeToBlues();
-      writeToSD();
-    }
+  if (millis() - lastTransmitTime >= TRANSMIT_INTERVAL) {
+    lastTransmitTime = millis();
+    error = ""; 
+    Serial.println("Transmitting data...");
+    writeToBlues();
+    writeToSD();
+  }
 }
