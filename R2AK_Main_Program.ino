@@ -1,12 +1,18 @@
+#include <Arduino.h>
+
+#define ESP32_CAN_TX_PIN GPIO_NUM_8
+#define ESP32_CAN_RX_PIN GPIO_NUM_7
+
+#include <NMEA2000_CAN.h>
+#include <N2kMessages.h>
+#include <Wire.h>
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h>
+#include <Adafruit_BNO08x.h>
+
 #include <SPI.h>
 #include "FS.h"
 #include "SD.h"
 #include <Notecard.h>
-#include <Wire.h>
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h>
-#include <Adafruit_BNO08x.h>
-#include <NMEA2000_CAN.h>
-#include <N2kMessages.h>
 
 #define BNO08X_RESET -1
 
@@ -30,19 +36,28 @@ File dataFile;
 String error = "";
 
 // Data from boat
-double AWS = 0;
+double DepthBelowTransducer = 0;
+
+double AWS = 0; //Apparent Wind Speed
 double AWS_x;
 double AWS_y;
 
-double AWA = 0;
+double AWA = 0;  //Apparent Wind Angle
 
-double AWS_raw = 0;
-double AWA_raw = 0;
+// Averaging Earth frame AWS components 
+double awsXSum = 0;
+double awsYSum = 0;
+int awsCount = 0;
 
-double STW = 0;
+double STW = 0;   // Speed Through Water (knots)
 
 double STW_x;
 double STW_y;
+
+// Averaging Earth frame STW components 
+double stwXSum = 0;
+double stwYSum = 0;
+int stwCount = 0;
 
 double CurrentSpeed;
 double CurrentDir;
@@ -51,16 +66,18 @@ double Current_x;
 double Current_y;
 
 // True wind output
-double TWS;
+double TWS; //True Wind Speed
 float TWS_x;
 float TWS_y;
-float TWD;
+float TWD; //True Wind Direction
+
+float imu_heading = 0; 
 
 // NMEA2000 message handler
 void HandleNMEA2000Msg(const tN2kMsg &msg) {
 
   switch (msg.PGN) {
-
+    // WIND DATA
     case 130306: {
       unsigned char SID;
       double WindSpeed;
@@ -68,27 +85,35 @@ void HandleNMEA2000Msg(const tN2kMsg &msg) {
       tN2kWindReference ref;
 
       if (ParseN2kWindSpeed(msg, SID, WindSpeed, WindAngle, ref)) {
-        AWS_raw = WindSpeed;
-        AWA_raw = WindAngle;
-
-        AWS = WindSpeed * 1.94384;
-        AWA = WindAngle * 180.0 / PI;
-
+        AWS = WindSpeed * 1.94384;    // convert m/s to knots
+        AWA = WindAngle * 180.0 / PI; // convert rad to deg
         if (AWA < 0) AWA += 360.0;
+
+        // Project Apparent Wind from boat frame to earth frame
+        double headRad = imu_heading * PI / 180.0;
+        double awaEarthRad = WindAngle + headRad; // WindAngle from PGN is already in radians
+
+        awsXSum += AWS * sin(awaEarthRad); // Earth East Component
+        awsYSum += AWS * cos(awaEarthRad); // Earth North Component
+        awsCount++;
+
+        Serial.print("   [WIND] Speed: "); Serial.print(AWS);
+        Serial.print(" knots | Angle: "); Serial.println(AWA);
       }
     } break;
 
+    // WATER DEPTH
     case 128267: {
       unsigned char SID;
-      double DepthBelowTransducer;
+ 
       double Offset;
 
       if (ParseN2kWaterDepth(msg, SID, DepthBelowTransducer, Offset)) {
-        Serial.print("Depth: ");
-        Serial.println(DepthBelowTransducer);
+        Serial.print("   [DEPTH] "); Serial.print(DepthBelowTransducer); Serial.println(" m");
       }
     } break;
 
+    // KNOTMETER DATA
     case 128259: {
       unsigned char SID;
       double WaterReferencedSpeed;
@@ -96,13 +121,21 @@ void HandleNMEA2000Msg(const tN2kMsg &msg) {
       tN2kSpeedWaterReferenceType SWRT;
 
       if (ParseN2kBoatSpeed(msg, SID, WaterReferencedSpeed, GroundReferencedSpeed, SWRT)) {
-        STW = WaterReferencedSpeed * 1.94384;
+        STW = WaterReferencedSpeed * 1.94384; // m/s -> knots
+        
+        // MODIFIED: Project STW into Earth Frame immediately using latest heading
+        double headRad = imu_heading * PI / 180.0;
+        stwXSum += STW * sin(headRad); // Earth East Component
+        stwYSum += STW * cos(headRad); // Earth North Component
+        stwCount++;
+
+        Serial.print("   [KNOTMETER] Speed: "); Serial.print(STW); Serial.println(" knots");
       }
     } break;
   }
 }
 
-// GNSS
+// GNSS Declarations
 SFE_UBLOX_GNSS myGNSS;
 
 double lat = 0, lon = 0;
@@ -113,26 +146,33 @@ double SOG_y;
 double COG = 0;
 int hour = 0, minute = 0, second = 0;
 
-// IMU
+// averaging SOG vector components (Earth frame) 
+double sogXSum = 0;
+double sogYSum = 0;
+int sogCount = 0;
+
+// IMU (I2C)
+#define BNO08X_RESET -1
 Adafruit_BNO08x bno085(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
 
-float imu_heading = 0;
-
-float imuSum = 0;
+// averaging IMU 
+double imuSinSum = 0;
+double imuCosSum = 0;
 int imuCount = 0;
 
+
+// IMU DATA READING
 void updateIMU() {
   if (bno085.wasReset()) {
     Serial.println("Sensor reset, re-enabling reports...");
-    if (!bno085.enableReport(SH2_ROTATION_VECTOR)) {
-      error += "IMU re-enable failed after reset; ";
-    }
+    bno085.enableReport(SH2_ROTATION_VECTOR);
   }
 
   if (!bno085.getSensorEvent(&sensorValue)) return;
 
   if (sensorValue.sensorId == SH2_ROTATION_VECTOR) {
+
     float qw = sensorValue.un.rotationVector.real;
     float qx = sensorValue.un.rotationVector.i;
     float qy = sensorValue.un.rotationVector.j;
@@ -141,25 +181,44 @@ void updateIMU() {
     float yaw = atan2(2.0f * (qw * qz + qx * qy),
                       1.0f - 2.0f * (qy * qy + qz * qz));
 
-    float heading = yaw * 180.0f / PI;
+    float heading = yaw * 180.0f / PI; //convert rad to deg
     if (heading < 0) heading += 360.0f;
 
-    imuSum += heading;
+    // Update global tracking heading variable
+    imu_heading = heading;
+
+    double headingRad = heading * PI / 180.0;
+
+    imuSinSum += sin(headingRad);
+    imuCosSum += cos(headingRad);
     imuCount++;
   }
 }
 
+// GNSS DATA READING
 void readGNSS() {
-  lat      = myGNSS.getLatitude()    / 10000000.0;
-  lon      = myGNSS.getLongitude()   / 10000000.0;
-  altitude = myGNSS.getAltitude();
+  // Only sample and accumulate when the u-blox peripheral drops a new complete PVT frame
+  if (myGNSS.getPVT() && myGNSS.getInvalidLlh() == false) {
+    lat = myGNSS.getLatitude() / 10000000.0;
+    lon = myGNSS.getLongitude() / 10000000.0;
 
-  double speed_m_s = myGNSS.getGroundSpeed() / 1000.0;
-  SOG    = speed_m_s * 1.94384;
-  COG    = myGNSS.getHeading() / 100000.0;
-  hour   = myGNSS.getHour();
-  minute = myGNSS.getMinute();
-  second = myGNSS.getSecond();
+    altitude = myGNSS.getAltitude();
+
+    double speed_m_s = myGNSS.getGroundSpeed() / 1000.0;
+    SOG = speed_m_s * 1.94384; // m/s -> knots
+
+    COG = myGNSS.getHeading() / 100000.0;
+
+    double cogRad = COG * PI / 180.0;
+
+    sogXSum += SOG * sin(cogRad); // East component
+    sogYSum += SOG * cos(cogRad); // North component
+    sogCount++;
+
+    hour = myGNSS.getHour();
+    minute = myGNSS.getMinute();
+    second = myGNSS.getSecond();
+  }
 }
 
 void writeToBlues() {
@@ -169,6 +228,8 @@ void writeToBlues() {
     error += "Failed to create note.add; ";
     return;
   }
+
+  JAddBoolToObject(req, "sync", true);
 
   J *body = JCreateObject();
   if (body) {
@@ -328,6 +389,7 @@ void setup() {
   if (req != NULL) {
     JAddStringToObject(req, "product", productUID);
     JAddStringToObject(req, "mode", "continuous");
+    JAddNumberToObject(req, "outbound", 1); // sync outbound queue every 1 minute max
     NoteRequest(req);
   } else {
     error += "hub.set request failed; ";
@@ -387,6 +449,10 @@ void setup() {
 }
 
 void loop() {
+  NMEA2000.ParseMessages();
+  updateIMU();
+  readGNSS();
+
   if (!SD.begin(cs, SPI, 400000)) {
     error += "SD remount failed; ";
     digitalWrite(LED_PIN, HIGH);
@@ -395,96 +461,82 @@ void loop() {
     delay(1000);
   }
 
-  NMEA2000.ParseMessages();
-  updateIMU();
-
   if (millis() - lastSampleTime >= SAMPLE_INTERVAL) {
     lastSampleTime = millis();
 
-    error = ""; // Reset errors for this cycle
-
-    readGNSS();
-
+    // Circular average heading
     if (imuCount > 0) {
-      imu_heading = imuSum / imuCount;
-    } else {
-      error += "No IMU samples this cycle; ";
+      imu_heading = atan2(imuSinSum / imuCount, imuCosSum / imuCount) * 180.0 / PI;
+      if (imu_heading < 0) imu_heading += 360.0;
     }
 
-    imuSum   = 0;
-    imuCount = 0;
+    // Average GPS velocity vector
+    if (sogCount > 0) {
+      SOG_x = sogXSum / sogCount;
+      SOG_y = sogYSum / sogCount;
+      SOG = sqrt(SOG_x * SOG_x + SOG_y * SOG_y);
+      COG = atan2(SOG_x, SOG_y) * 180.0 / PI;
+      if (COG < 0) COG += 360.0;
+    }
 
-    double deg2rad = PI / 180.0;
-    double cogRad  = COG * deg2rad;
+    // Average Earth Frame Apparent Wind vector
+    if (awsCount > 0) {
+      AWS_x = awsXSum / awsCount;
+      AWS_y = awsYSum / awsCount;
+      AWS = sqrt(AWS_x * AWS_x + AWS_y * AWS_y);
+      AWA = atan2(AWS_x, AWS_y) * 180.0 / PI;
+      if (AWA < 0) AWA += 360.0;
+    }
 
-    double windDirRad = (AWA + imu_heading + 180.0) * deg2rad;
+    // Average Earth Frame STW vector
+    if (stwCount > 0) {
+      STW_x = stwXSum / stwCount;
+      STW_y = stwYSum / stwCount;
+      STW = sqrt(STW_x * STW_x + STW_y * STW_y);
+    }
 
-    AWS_x = AWS * sin(windDirRad);
-    AWS_y = AWS * cos(windDirRad);
-
-    SOG_x = SOG * sin(cogRad);
-    SOG_y = SOG * cos(cogRad);
-
-    TWS_x = AWS_x + SOG_x;
-    TWS_y = AWS_y + SOG_y;
-
+    // True Wind calculation
+    TWS_x = AWS_x - SOG_x;
+    TWS_y = AWS_y - SOG_y;
     TWS = sqrt(TWS_x * TWS_x + TWS_y * TWS_y);
-
     TWD = atan2(TWS_x, TWS_y) * 180.0 / PI;
-    TWD = TWD + 180.0;
-    if (TWD >= 360.0) TWD -= 360.0;
+    if (TWD < 0) TWD += 360.0;
 
-    double headingRad = imu_heading * deg2rad;
-
-    STW_x = STW * sin(headingRad);
-    STW_y = STW * cos(headingRad);
-
+    // True Current Vector calculation
     Current_x = SOG_x - STW_x;
     Current_y = SOG_y - STW_y;
-
     CurrentSpeed = sqrt(Current_x * Current_x + Current_y * Current_y);
-
     CurrentDir = atan2(Current_x, Current_y) * 180.0 / PI;
     if (CurrentDir < 0) CurrentDir += 360.0;
 
-    // Print
-    Serial.print("Lat: ");            
-    Serial.println(lat, 6);
-    Serial.print("Lon: ");            
-    Serial.println(lon, 6);
-    Serial.print("Alt: ");            
-    Serial.println(altitude);
-    Serial.print("SOG (knots): ");    
-    Serial.println(SOG);
-    Serial.print("COG (deg): ");      
-    Serial.println(COG);
+    // Reset values for next averaging interval
+    imuSinSum = 0;
+    imuCosSum = 0;
+    imuCount = 0;
 
-    Serial.print("UTC: ");
-    if (hour < 10) {
-      Serial.print("0"); 
-      Serial.print(hour);   
-      Serial.print(":");
-    } 
-    if (minute < 10) {
-      Serial.print("0"); 
-      Serial.print(minute); 
-      Serial.print(":");
-    }
-    if (second < 10) {
-      Serial.print("0"); 
-      Serial.println(second);
-    }
-    
-    Serial.print("IMU Heading (avg): ");        
-    Serial.println(imu_heading);
-    Serial.print("True wind speed (knots): ");  
-    Serial.println(TWS);
-    Serial.print("True wind direction (deg): "); 
-    Serial.println(TWD);
-    Serial.print("True current speed (knots): "); 
-    Serial.println(CurrentSpeed);
-    Serial.print("True current direction (deg): "); 
-    Serial.println(CurrentDir);
+    sogXSum = 0;
+    sogYSum = 0;
+    sogCount = 0;
+
+    awsXSum = 0;
+    awsYSum = 0;
+    awsCount = 0;
+
+    stwXSum = 0;
+    stwYSum = 0;
+    stwCount = 0;
+
+    // prints
+    Serial.print("Lat: "); Serial.println(lat, 6);
+    Serial.print("Lon: "); Serial.println(lon, 6);
+    Serial.print("SOG (knots): "); Serial.println(SOG);
+    Serial.print("COG (deg): "); Serial.println(COG);
+    Serial.print("IMU Heading (avg): "); Serial.println(imu_heading);
+    Serial.print("True wind speed (knots): "); Serial.println(TWS);
+    Serial.print("True wind direction (deg): "); Serial.println(TWD);
+    Serial.print("True current speed (knots): "); Serial.println(CurrentSpeed);
+    Serial.print("True current direction (deg): "); Serial.println(CurrentDir);
+  } 
 
     if (error.length() > 0) {
       Serial.print("Errors: ");
@@ -498,5 +550,4 @@ void loop() {
       writeToBlues();
       writeToSD();
     }
-  }
 }
