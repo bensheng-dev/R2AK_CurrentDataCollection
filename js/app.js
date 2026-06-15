@@ -186,7 +186,7 @@ function updateChart(points) {
 }
 
 // ── Sidebar data display ─────────────────────────────────────
-function updateSidebar(p) {
+function updateSidebar(p, newestUtc) {
   set('val-lat',         fmt(p.lat, 5));
   set('val-lon',         fmt(p.lon, 5));
 
@@ -210,7 +210,7 @@ function updateSidebar(p) {
   set('val-heading',     fmt(p.heading, 0));
   set('val-current-spd', fmt(p.current_spd, 2));
   set('val-current-dir', fmt(p.current_dir, 0));
-  set('last-updated', p.utc || '—');
+  set('last-updated', newestUtc || p.utc || '—');
   // Error string
   const errEl = document.getElementById('val-error');
   if (errEl) {
@@ -335,12 +335,16 @@ async function fetchData() {
       return;
     }
 
+    // Latest point with a good GPS fix (for map/sidebar position data)
     const latest = allPoints[0];
-    const ageMs  = Date.now() - (latest._ts || 0);
+
+    // Use the newest parsed event (even with no GPS fix) for "last seen" time
+    const newestPoint = parsed.reduce((a, b) => (a._ts || 0) > (b._ts || 0) ? a : b);
+    const ageMs  = Date.now() - (newestPoint._ts || 0);
     const isLive = ageMs < 5 * 60 * 1000; // <5 min = live
     setStatus(isLive ? 'live' : 'stale', isLive ? 'Live' : 'Last seen ' + timeAgo(ageMs));
 
-    updateSidebar(latest);
+    updateSidebar(latest, newestPoint.utc);
     updateMap(allPoints);
     updateChart(allPoints);
 
