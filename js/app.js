@@ -300,12 +300,13 @@ async function fetchData() {
       .filter(e => e.body && e.body['Latitude'] !== undefined)
       .map(parseEvent);
 
-    // Events arrive newest-first from Notehub.
-    // Pass 1 (newest→oldest): fill BACK from the most recent good fix
+    const hasGoodFix = p => p.lat !== null && p.lon !== null && (p.lat !== 0 || p.lon !== 0);
+
+    // Pass 1 (newest→oldest): back-fill from most recent good fix
     let lastGoodLat = null, lastGoodLon = null, lastGoodPosTime = null;
     for (let i = 0; i < parsed.length; i++) {
       const p = parsed[i];
-      if (p.lat && p.lon) {
+      if (hasGoodFix(p)) {
         lastGoodLat = p.lat;
         lastGoodLon = p.lon;
         lastGoodPosTime = p.utc;
@@ -317,15 +318,15 @@ async function fetchData() {
       }
     }
 
-    // Pass 2 (oldest→newest): fill FORWARD for any gaps before the first good fix
+    // Pass 2 (oldest→newest): forward-fill for gaps before first good fix
     lastGoodLat = null; lastGoodLon = null; lastGoodPosTime = null;
     for (let i = parsed.length - 1; i >= 0; i--) {
       const p = parsed[i];
-      if (p.lat && p.lon && !p._positionStale) {
+      if (hasGoodFix(p) && !p._positionStale) {
         lastGoodLat = p.lat;
         lastGoodLon = p.lon;
         lastGoodPosTime = p.utc;
-      } else if (!p.lat && lastGoodLat !== null) {
+      } else if (!hasGoodFix(p) && lastGoodLat !== null) {
         p.lat = lastGoodLat;
         p.lon = lastGoodLon;
         p._positionStale = true;
@@ -333,7 +334,7 @@ async function fetchData() {
       }
     }
 
-    allPoints = parsed.filter(p => p.lat !== null && p.lon !== null);
+    allPoints = parsed.filter(p => hasGoodFix(p));
 
     if (!allPoints.length) {
       setStatus('stale', 'No data');
