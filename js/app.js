@@ -300,9 +300,10 @@ async function fetchData() {
       .filter(e => e.body && e.body['Latitude'] !== undefined)
       .map(parseEvent);
 
-    // Forward-fill lat/lon: if a point has 0/null, use the last known good position
+    // Events arrive newest-first from Notehub.
+    // Pass 1 (newest→oldest): fill BACK from the most recent good fix
     let lastGoodLat = null, lastGoodLon = null, lastGoodPosTime = null;
-    for (let i = parsed.length - 1; i >= 0; i--) {
+    for (let i = 0; i < parsed.length; i++) {
       const p = parsed[i];
       if (p.lat && p.lon) {
         lastGoodLat = p.lat;
@@ -312,7 +313,23 @@ async function fetchData() {
         p.lat = lastGoodLat;
         p.lon = lastGoodLon;
         p._positionStale = true;
-        p._positionStaleSince = lastGoodPosTime; // timestamp of last known good fix
+        p._positionStaleSince = lastGoodPosTime;
+      }
+    }
+
+    // Pass 2 (oldest→newest): fill FORWARD for any gaps before the first good fix
+    lastGoodLat = null; lastGoodLon = null; lastGoodPosTime = null;
+    for (let i = parsed.length - 1; i >= 0; i--) {
+      const p = parsed[i];
+      if (p.lat && p.lon && !p._positionStale) {
+        lastGoodLat = p.lat;
+        lastGoodLon = p.lon;
+        lastGoodPosTime = p.utc;
+      } else if (!p.lat && lastGoodLat !== null) {
+        p.lat = lastGoodLat;
+        p.lon = lastGoodLon;
+        p._positionStale = true;
+        p._positionStaleSince = lastGoodPosTime;
       }
     }
 
