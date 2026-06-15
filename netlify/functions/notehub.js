@@ -51,9 +51,9 @@ exports.handler = async (event) => {
       hasMore = events.length === PAGE_SIZE;
       pageNum++;
 
-      // Safety cap — 8 pages × 250 = 2,000 events (~7 days at 5-min intervals)
-      if (pageNum > 8) {
-        console.warn("Hit page cap (8 pages)");
+      // Safety cap — 4 pages × 250 = 1,000 events (~3.5 days at 5-min intervals)
+      if (pageNum > 4) {
+        console.warn("Hit page cap (4 pages)");
         hasMore = false;
       }
     }
