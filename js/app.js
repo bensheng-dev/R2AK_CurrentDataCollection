@@ -283,9 +283,7 @@ function drawCompass(twd) {
 async function fetchData() {
   setStatus('loading');
   try {
-    // Fixed race start date — June 13 2026 00:00 UTC as Unix timestamp
-    const raceStart = Math.floor(new Date('2026-06-13T00:00:00Z').getTime() / 1000);
-    const res = await fetch(`/.netlify/functions/notehub?startDate=${raceStart}`);
+    const res = await fetch('/.netlify/functions/notehub');
 
     if (!res.ok) throw new Error(`Notehub ${res.status}`);
 
