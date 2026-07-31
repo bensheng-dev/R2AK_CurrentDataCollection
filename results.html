@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Full Race Track &amp; Log — R2AK Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/results.css" />
+</head>
+<body class="results-page">
+  <main id="results-app">
+    <header class="results-header">
+      <div class="results-header-top">
+        <p class="eyebrow">Race to Alaska</p>
+        <a href="index.html" class="modulair-link back-link">← Live Tracker</a>
+      </div>
+      <h1>Full Race Track &amp; Log</h1>
+      <p class="subtitle">Complete onboard data log, recovered from the SD card</p>
+    </header>
+
+    <section id="stats-bar" class="stats-bar">
+      <div class="stat">
+        <span class="stat-value mono" id="stat-points">—</span>
+        <span class="stat-label">Log Entries</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value mono" id="stat-fixes">—</span>
+        <span class="stat-label">GPS Fixes</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value mono" id="stat-distance">—</span>
+        <span class="stat-label">Track Distance (nm)</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value mono" id="stat-max-sog">—</span>
+        <span class="stat-label">Max SOG (kts)</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value mono" id="stat-max-tws">—</span>
+        <span class="stat-label">Max True Wind (kts)</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value mono" id="stat-max-current">—</span>
+        <span class="stat-label">Max Current (kts)</span>
+      </div>
+    </section>
+
+    <section id="results-map-wrap">
+      <div id="results-map"></div>
+      <div class="map-legend">
+        <span class="legend-title">SOG</span>
+        <span class="legend-item"><i style="background:#39d98a"></i> &lt; 3 kts</span>
+        <span class="legend-item"><i style="background:#00c8ff"></i> 3–6 kts</span>
+        <span class="legend-item"><i style="background:#f7c948"></i> 6–10 kts</span>
+        <span class="legend-item"><i style="background:#ff4757"></i> 10+ kts</span>
+      </div>
+    </section>
+
+    <section id="table-panel">
+      <div class="table-header">
+        <h2>Log Data</h2>
+        <div class="table-controls">
+          <span id="table-range" class="mono table-range">—</span>
+          <button id="prev-page" type="button" class="page-btn">‹ Prev</button>
+          <button id="next-page" type="button" class="page-btn">Next ›</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table id="log-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>UTC</th>
+              <th>Lat</th>
+              <th>Lon</th>
+              <th>SOG</th>
+              <th>COG</th>
+              <th>TWS</th>
+              <th>TWD</th>
+              <th>STW</th>
+              <th>Current</th>
+              <th>Cur Dir</th>
+              <th>Errors</th>
+            </tr>
+          </thead>
+          <tbody id="log-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/results.js"></script>
+</body>
+</html>
