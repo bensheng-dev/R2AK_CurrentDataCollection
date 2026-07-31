@@ -3,7 +3,7 @@
 //  Data source: data/race_track.csv (recovered SD-card log)
 // ============================================================
 
-const CSV_PATH = "C:\Users\BenS\Downloads\sensor_data.csv";
+const CSV_PATH = 'data/race_track.csv';
 const PAGE_SIZE = 50;
 
 let allRows = [];     // every parsed row, in file order (oldest → newest)
