@@ -5,7 +5,15 @@
 
 html.results-page, body.results-page {
   height: auto;
-  overflow-y: auto;
+  overflow: visible;
+}
+
+/* The base stylesheet locks <html> itself to overflow:hidden/height:100% for the
+   single-viewport live tracker. This page needs a normal scrolling document, so
+   reset it unconditionally here (results.css is only ever loaded on this page). */
+html, body {
+  height: auto;
+  overflow: visible;
 }
 
 #results-app {
@@ -138,6 +146,18 @@ html.results-page, body.results-page {
 }
 
 .highlight-marker { background: transparent; border: none; }
+
+.load-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--danger);
+  font-family: var(--mono);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+}
 
 /* ── Table panel ────────────────────────────────────────────── */
 #table-panel {

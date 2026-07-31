@@ -15,8 +15,12 @@ let currentPage = 0;
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-  initMap();
   try {
+    if (typeof L === 'undefined') {
+      throw new Error('Map library (Leaflet) failed to load — check your connection and reload');
+    }
+    initMap();
+
     const res = await fetch(CSV_PATH);
     if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
     const text = await res.text();
@@ -28,10 +32,17 @@ async function init() {
     renderTable();
   } catch (err) {
     console.error(err);
-    document.getElementById('stat-points').textContent = 'Error';
-    const body = document.getElementById('log-table-body');
-    body.innerHTML = `<tr><td colspan="12" class="mono">Could not load ${CSV_PATH} — ${err.message}</td></tr>`;
+    showError(err.message);
   }
+}
+
+function showError(message) {
+  ['stat-points', 'stat-fixes', 'stat-distance', 'stat-max-sog', 'stat-max-tws', 'stat-max-current']
+    .forEach(id => set(id, 'Err'));
+  const mapEl = document.getElementById('results-map');
+  if (mapEl) mapEl.innerHTML = `<div class="load-error">Could not load the track: ${message}</div>`;
+  const body = document.getElementById('log-table-body');
+  if (body) body.innerHTML = `<tr><td colspan="12" class="mono">${message}</td></tr>`;
 }
 
 // ── CSV parsing ──────────────────────────────────────────────
